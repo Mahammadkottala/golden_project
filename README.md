@@ -1,57 +1,61 @@
-import difflib
+#golden_project
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import ttk
+from tkinter import filedialog
+import difflib
+from tqdm import tqdm
+from time import sleep
 
-def check_plagiarism():
-    text1 = entry_text1.get("1.0", tk.END)
-    text2 = entry_text2.get("1.0", tk.END)
+class PlagiarismChecker:
+    def __init__(self, master):
+        self.master = master
+        self.master.title("Plagiarism Checker")
+        self.master.geometry("500x250")
+        self.master.resizable(False, False)
 
-    # Remove leading/trailing whitespaces and convert to lowercase
-    text1 = text1.strip().lower()
-    text2 = text2.strip().lower()
+        self.file1_path = ""
+        self.file2_path = ""
 
-    # Split the texts into individual words
-    words1 = text1.split()
-    words2 = text2.split()
+        self.file1_button = tk.Button(self.master, text="Select File 1", command=self.select_file1)
+        self.file1_button.place(relx=0.25, rely=0.2, anchor="center")
 
-    # Calculate the similarity ratio using difflib's SequenceMatcher
-    similarity_ratio = difflib.SequenceMatcher(None, words1, words2).ratio()
+        self.file2_button = tk.Button(self.master, text="Select File 2", command=self.select_file2)
+        self.file2_button.place(relx=0.75, rely=0.2, anchor="center")
 
-    output_text.delete("1.0", tk.END)
-    output_text.insert(tk.END, f"Similarity Ratio: {similarity_ratio:.2f}")
+        self.check_button = tk.Button(self.master, text="Check Plagiarism", command=self.check_plagiarism)
+        self.check_button.place(relx=0.5, rely=0.5, anchor="center")
 
-def reset_fields():
-    entry_text1.delete("1.0", tk.END)
-    entry_text2.delete("1.0", tk.END)
-    output_text.delete("1.0", tk.END)
+        self.progress_bar = tk.ttk.Progressbar(self.master, orient="horizontal", length=400, mode="determinate")
+        self.progress_bar.place(relx=0.5, rely=0.7, anchor="center")
 
-# Create GUI
-window = tk.Tk()
-window.title("Plagiarism Checker")
-window.configure(bg="#F0F0F0")  # Set background color
+    def select_file1(self):
+        self.file1_path = filedialog.askopenfilename()
+        self.file1_button.config(text="File 1 Selected")
 
-# Text Entry for Input
-label_text1 = tk.Label(window, text="Text 1:", font=("Arial", 14), bg="#F0F0F0")
-label_text1.pack()
-entry_text1 = tk.Text(window, height=5, width=30, font=("Arial", 14))
-entry_text1.pack()
+    def select_file2(self):
+        self.file2_path = filedialog.askopenfilename()
+        self.file2_button.config(text="File 2 Selected")
 
-label_text2 = tk.Label(window, text="Text 2:", font=("Arial", 14), bg="#F0F0F0")
-label_text2.pack()
-entry_text2 = tk.Text(window, height=5, width=30, font=("Arial", 14))
-entry_text2.pack()
+    def check_plagiarism(self):
+        if not self.file1_path or not self.file2_path:
+            tk.messagebox.showerror("Error", "Please select two files.")
+            return
 
-# Button to Check Plagiarism
-button_check = tk.Button(window, text="Check Plagiarism", command=check_plagiarism, font=("Arial", 14), bg="#4CAF50", fg="white")
-button_check.pack()
+        file1_text = open(self.file1_path).read()
+        file2_text = open(self.file2_path).read()
 
-# Button to Reset Fields
-button_reset = tk.Button(window, text="Reset", command=reset_fields, font=("Arial", 14), bg="#FF4500", fg="white")
-button_reset.pack()
+        matcher = difflib.SequenceMatcher(None, file1_text, file2_text)
 
-# Output Display
-output_text = tk.Text(window, height=2, width=30, font=("Arial", 14))
-output_text.pack()
+        for i in range(101):
+            self.progress_bar.step(1)
+            self.progress_bar.update()
+            sleep(0.01)
 
-# Run the GUI
-window.mainloop()
+        similarity = matcher.ratio() * 100
+        tk.messagebox.showinfo("Result", f"The two files are {similarity:.2f}% similar.")
+
+    
+
+root = tk.Tk()
+app = PlagiarismChecker(root)
+root.mainloop()
